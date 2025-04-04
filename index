@@ -51,7 +51,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         const AppConfig = {
-            API_BASE_URL: "https://your-railway-app.up.railway.app"
+            API_BASE_URL: "heroesbase-production.up.railway.app"
         };
 
         const AppState = {
