@@ -51,8 +51,7 @@
     <script>
         const tg = window.Telegram.WebApp;
         const AppConfig = {
-            API_BASE_URL: "https://heroesbase-production.up.railway.app" // Для продакшена
-            // API_BASE_URL: "http://localhost:8080" // Для локальной разработки
+            API_BASE_URL: "https://heroesbase-production.up.railway.app"
         };
 
         const AppState = {
@@ -67,13 +66,6 @@
         tg.ready();
         tg.expand();
 
-        // Утилиты
-        const Utils = {
-            wait(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-        };
-
         // API функции
         const API = {
             async fetch(endpoint, options = {}) {
@@ -87,7 +79,7 @@
                 const headers = {
                     "Content-Type": "application/json",
                     "X-Telegram-Init-Data": telegramInitData,
-                    ...(AppState.token && { "Authorization": `Bearer ${AppState.token}` }), // Условно добавляем токен
+                    ...(AppState.token && { "Authorization": `Bearer ${AppState.token}` }),
                     ...options.headers
                 };
 
@@ -95,7 +87,7 @@
                     const response = await fetch(url, {
                         ...options,
                         headers,
-                        credentials: 'include' // Для поддержки credentials
+                        credentials: 'include'
                     });
 
                     if (!response.ok) {
@@ -122,9 +114,7 @@
 
                 const response = await API.fetch('/init', {
                     method: 'POST'
-                    // Убрано body, так как сервер берет данные из X-Telegram-Init-Data
                 });
-
 
                 AppState.token = response.t;
                 AppState.coins = response.coins || 0;
@@ -159,7 +149,7 @@
                 console.error('Error getting coin:', error);
                 if (error.message.includes("401")) {
                     alert('Authentication failed. Reloading...');
-                    await initUser(); // Повторная инициализация при истечении токена
+                    await initUser();
                 } else {
                     alert(`Failed to get coin: ${error.message}`);
                 }
