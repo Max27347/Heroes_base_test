@@ -49,9 +49,10 @@
     </div>
 
     <script>
-const tg = window.Telegram.WebApp;
+        const tg = window.Telegram.WebApp;
         const AppConfig = {
-            API_BASE_URL: "https://heroesbase-production.up.railway.app" // Исправлено: добавлен протокол
+            API_BASE_URL: "https://heroesbase-production.up.railway.app" // Для продакшена
+            // API_BASE_URL: "http://localhost:8080" // Для локальной разработки
         };
 
         const AppState = {
@@ -78,20 +79,23 @@ const tg = window.Telegram.WebApp;
             async fetch(endpoint, options = {}) {
                 const url = `${AppConfig.API_BASE_URL}${endpoint}`;
                 const telegramInitData = tg.initData || "";
-                
+
                 if (!telegramInitData) {
                     throw new Error("Telegram initData is required");
                 }
 
+                const headers = {
+                    "Content-Type": "application/json",
+                    "X-Telegram-Init-Data": telegramInitData,
+                    ...(AppState.token && { "Authorization": `Bearer ${AppState.token}` }), // Условно добавляем токен
+                    ...options.headers
+                };
+
                 try {
                     const response = await fetch(url, {
                         ...options,
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-Telegram-Init-Data": telegramInitData,
-                            "Authorization": `Bearer ${AppState.token}`,
-                            ...options.headers
-                        }
+                        headers,
+                        credentials: 'include' // Для поддержки credentials
                     });
 
                     if (!response.ok) {
@@ -117,9 +121,10 @@ const tg = window.Telegram.WebApp;
                 AppState.userId = userId;
 
                 const response = await API.fetch('/init', {
-                    method: 'POST',
-                    body: JSON.stringify({ user_id: AppState.userId })
+                    method: 'POST'
+                    // Убрано body, так как сервер берет данные из X-Telegram-Init-Data
                 });
+
 
                 AppState.token = response.t;
                 AppState.coins = response.coins || 0;
@@ -127,10 +132,9 @@ const tg = window.Telegram.WebApp;
                 updateCoins();
             } catch (error) {
                 console.error('Error initializing user:', error);
-                alert('Failed to initialize. Please reload the app.');
+                alert(`Failed to initialize: ${error.message}`);
             }
         }
-
 
         // Получение монеты
         async function getCoin() {
@@ -154,9 +158,10 @@ const tg = window.Telegram.WebApp;
             } catch (error) {
                 console.error('Error getting coin:', error);
                 if (error.message.includes("401")) {
-                    alert('Authentication failed. Please reload the app.');
+                    alert('Authentication failed. Reloading...');
+                    await initUser(); // Повторная инициализация при истечении токена
                 } else {
-                    alert('Failed to get coin. Please try again.');
+                    alert(`Failed to get coin: ${error.message}`);
                 }
             }
         }
