@@ -49,7 +49,7 @@
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
+        const tg = window.Telegram?.WebApp;
         const AppConfig = {
             API_BASE_URL: "https://heroesbase-production.up.railway.app"
         };
@@ -62,19 +62,29 @@
             coins: 0
         };
 
-        // Инициализация Telegram WebApp
-        tg.ready();
-        tg.expand();
+        // Проверка доступности Telegram WebApp
+        if (!tg) {
+            console.error("Telegram WebApp is not available");
+            alert("This app must be opened in Telegram");
+        } else {
+            // Инициализация Telegram WebApp
+            tg.ready();
+            tg.expand();
+            console.log("Telegram WebApp initialized");
+        }
 
         // API функции
         const API = {
             async fetch(endpoint, options = {}) {
                 const url = `${AppConfig.API_BASE_URL}${endpoint}`;
-                const telegramInitData = tg.initData || "";
+                const telegramInitData = tg?.initData || "";
 
                 if (!telegramInitData) {
                     throw new Error("Telegram initData is required");
                 }
+
+                console.log("Sending request to:", url);
+                console.log("X-Telegram-Init-Data:", telegramInitData);
 
                 const headers = {
                     "Content-Type": "application/json",
@@ -90,6 +100,9 @@
                         credentials: 'include'
                     });
 
+                    console.log("Response status:", response.status);
+                    console.log("Response headers:", [...response.headers.entries()]);
+
                     if (!response.ok) {
                         const errorText = await response.text();
                         throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
@@ -97,6 +110,7 @@
 
                     return await response.json();
                 } catch (error) {
+                    console.error("Fetch error:", error);
                     throw error;
                 }
             }
@@ -105,17 +119,19 @@
         // Инициализация пользователя
         async function initUser() {
             try {
-                const userId = tg.initDataUnsafe?.user?.id?.toString();
-                if (!userId) {
+                const user = tg?.initDataUnsafe?.user;
+                if (!user || !user.id) {
                     throw new Error("User ID not found in Telegram initData");
                 }
-                
-                AppState.userId = userId;
+
+                AppState.userId = user.id.toString();
+                console.log("User ID:", AppState.userId);
 
                 const response = await API.fetch('/init', {
                     method: 'POST'
                 });
 
+                console.log("Init response:", response);
                 AppState.token = response.t;
                 AppState.coins = response.coins || 0;
                 AppState.isInitialized = true;
@@ -139,6 +155,7 @@
                     body: JSON.stringify({ user_id: AppState.userId })
                 });
 
+                console.log("Get coin response:", response);
                 if (response.success) {
                     AppState.coins = response.coins;
                     updateCoins();
