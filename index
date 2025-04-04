@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lucky Cubes - Get Coins</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #coins {
+            font-size: 24px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lucky Cubes</h1>
+        <p>Click the button to get a coin!</p>
+        <button onclick="getCoin()">Get Coin</button>
+        <div id="coins">Coins: 0</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        const AppConfig = {
+            API_BASE_URL: "https://your-railway-app.up.railway.app"
+        };
+
+        const AppState = {
+            userData: null,
+            userId: null,
+            token: null,
+            isInitialized: false,
+            coins: 0
+        };
+
+        // Инициализация Telegram WebApp
+        tg.ready();
+        tg.expand();
+
+        // Утилиты
+        const Utils = {
+            wait(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        };
+
+        // API функции
+        const API = {
+            async fetch(endpoint, options = {}) {
+                const url = `${AppConfig.API_BASE_URL}${endpoint}`;
+                const telegramInitData = tg.initData || "";
+                
+                if (!telegramInitData) {
+                    throw new Error("Telegram initData is required");
+                }
+
+                try {
+                    const response = await fetch(url, {
+                        ...options,
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-Telegram-Init-Data": telegramInitData,
+                            "Authorization": `Bearer ${AppState.token}`,
+                            ...options.headers
+                        }
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                    }
+
+                    return await response.json();
+                } catch (error) {
+                    throw error;
+                }
+            }
+        };
+
+        // Инициализация пользователя
+        async function initUser() {
+            try {
+                const userId = tg.initDataUnsafe?.user?.id?.toString();
+                if (!userId) {
+                    throw new Error("User ID not found in Telegram initData");
+                }
+                
+                AppState.userId = userId;
+
+                const response = await API.fetch('/init', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: AppState.userId })
+                });
+
+                AppState.token = response.t;
+                AppState.coins = response.coins || 0;
+                AppState.isInitialized = true;
+                updateCoins();
+            } catch (error) {
+                console.error('Error initializing user:', error);
+                alert('Failed to initialize. Please reload the app.');
+            }
+        }
+
+
+        // Получение монеты
+        async function getCoin() {
+            if (!AppState.isInitialized) {
+                alert('Please wait, initializing user...');
+                return;
+            }
+
+            try {
+                const response = await API.fetch('/get_coin', {
+                    method: 'POST',
+                    body: JSON.stringify({ user_id: AppState.userId })
+                });
+
+                if (response.success) {
+                    AppState.coins = response.coins;
+                    updateCoins();
+                } else {
+                    alert(response.message || 'Error getting coin');
+                }
+            } catch (error) {
+                console.error('Error getting coin:', error);
+                if (error.message.includes("401")) {
+                    alert('Authentication failed. Please reload the app.');
+                } else {
+                    alert('Failed to get coin. Please try again.');
+                }
+            }
+        }
+
+        // Обновление отображения монет
+        function updateCoins() {
+            document.getElementById('coins').innerText = `Coins: ${AppState.coins}`;
+        }
+
+        // Инициализация при загрузке
+        window.onload = async () => {
+            await initUser();
+        };
+    </script>
+</body>
+</html>
