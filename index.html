@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <!-- Запрет масштабирования -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tap to Earn - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -23,10 +22,10 @@
         
         #game-container {
             background: #0f0f0f;
-            padding: clamp(15px, 5vw, 25px); /* Адаптивный отступ */
+            padding: clamp(15px, 5vw, 25px);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
             width: 100%;
-            max-width: clamp(300px, 90vw, 400px); /* Адаптивная ширина */
+            max-width: clamp(300px, 90vw, 400px);
             text-align: center;
             margin: 0 auto;
             height: 100%;
@@ -38,7 +37,7 @@
         }
 
         h1 {
-            font-size: clamp(24px, 8vw, 32px); /* Адаптивный размер шрифта */
+            font-size: clamp(24px, 8vw, 32px);
             color: #ffffff;
             margin-bottom: clamp(10px, 3vw, 20px);
             text-transform: uppercase;
@@ -236,6 +235,7 @@
         let isSyncing = false;
         let pendingSync = false;
         let initDataUnsafe = {};
+        let syncTimeout = null;
 
         const pointsDisplay = document.getElementById('points');
         const pointsPerTapDisplay = document.getElementById('points-per-tap');
@@ -276,7 +276,12 @@
             }
         }
 
-        // Фоновая синхронизация с сервером
+        // Фоновая синхронизация с дебаунсингом
+        function debounceSync() {
+            clearTimeout(syncTimeout);
+            syncTimeout = setTimeout(syncUserData, 500); // Ждем 500 мс перед отправкой
+        }
+
         async function syncUserData() {
             if (isSyncing) {
                 pendingSync = true;
@@ -319,6 +324,11 @@
             }
         }
 
+        // Сохранение перед выходом
+        window.addEventListener('beforeunload', () => {
+            syncUserData(); // Попытка синхронизации перед закрытием
+        });
+
         // Обновление интерфейса
         function updateDisplay() {
             pointsDisplay.textContent = points;
@@ -331,7 +341,7 @@
         function tap() {
             points += pointsPerTap;
             updateDisplay();
-            syncUserData();
+            debounceSync(); // Вызываем с дебаунсингом
         }
 
         // Обработка апгрейда
@@ -341,7 +351,7 @@
                 pointsPerTap += 1;
                 upgradeCost = Math.floor(upgradeCost * 1.5);
                 updateDisplay();
-                syncUserData();
+                debounceSync(); // Вызываем с дебаунсингом
             }
         }
 
@@ -383,13 +393,11 @@
                     copyButton.className = 'copy-button';
                     copyButton.textContent = 'Copy';
                     copyButton.onclick = () => {
-                        // Используем Telegram WebApp API для копирования, если доступно
                         if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.writeToClipboard) {
                             window.Telegram.WebApp.writeToClipboard(item.value);
                             copyButton.textContent = 'Copied!';
                             setTimeout(() => copyButton.textContent = 'Copy', 2000);
                         } else {
-                            // Fallback на navigator.clipboard
                             navigator.clipboard.writeText(item.value).then(() => {
                                 copyButton.textContent = 'Copied!';
                                 setTimeout(() => copyButton.textContent = 'Copy', 2000);
