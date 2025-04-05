@@ -90,7 +90,6 @@
 
         // Telegram Web App
         window.Telegram.WebApp.ready();
-        const initData = window.Telegram.WebApp.initDataUnsafe;
         userId = initData?.user?.id || 'Unknown';
         userIdDisplay.textContent = userId;
 
