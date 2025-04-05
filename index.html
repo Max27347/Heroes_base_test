@@ -6,7 +6,6 @@
     <title>Tap to Earn - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Оставляем стили без изменений */
         body {
             font-family: Arial, sans-serif;
             margin: 0;
@@ -75,12 +74,12 @@
     </div>
 
     <script>
-        const BACKEND_URL = 'https://heroesbase-production.up.railway.app'; // Укажите URL вашего backend
-        const initData = window.Telegram.WebApp.initData;
+        const BACKEND_URL = 'https://heroesbase-production.up.railway.app';
         let points = 0;
         let pointsPerTap = 1;
         let upgradeCost = 10;
         let userId = null;
+        let initData = null;
 
         const pointsDisplay = document.getElementById('points');
         const pointsPerTapDisplay = document.getElementById('points-per-tap');
@@ -88,51 +87,63 @@
         const upgradeButton = document.getElementById('upgrade-button');
         const userIdDisplay = document.getElementById('user-id');
 
-        // Telegram Web App
-        window.Telegram.WebApp.ready();
-        userId = initData?.user?.id || 'Unknown';
+        // Инициализация Telegram Web App
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            initData = window.Telegram.WebApp.initData;
+            const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe || {};
+            userId = initDataUnsafe.user?.id || 'Unknown';
+            window.Telegram.WebApp.expand();
+            window.Telegram.WebApp.requestFullscreen();
+        } else {
+            console.warn('Telegram Web App не доступен. Тестирование вне Telegram?');
+            userId = 'TestUser'; // Для тестирования вне Telegram
+            initData = ''; // Пустое значение для тестов
+        }
         userIdDisplay.textContent = userId;
-
-        window.Telegram.WebApp.expand();
-        window.Telegram.WebApp.requestFullscreen();
 
         // Загрузка данных с сервера
         async function loadUserData() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                const data = await response.json();
-                if (data) {
-                    points = data.points || 0;
-                    pointsPerTap = data.pointsPerTap || 1;
-                    upgradeCost = data.upgradeCost || 10;
+                if (!response.ok) {
+                    throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
                 }
+                const data = await response.json();
+                points = data.points || 0;
+                pointsPerTap = data.pointsPerTap || 1;
+                upgradeCost = data.upgradeCost || 10;
                 updateDisplay();
             } catch (error) {
                 console.error('Error loading data:', error);
+                userIdDisplay.textContent = `${userId} (Load failed)`;
             }
         }
 
         // Сохранение данных на сервер
-async function saveUserData() {
-    try {
-        const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-Telegram-Init-Data': initData
-            },
-            body: JSON.stringify({
-                points: points,
-                pointsPerTap: pointsPerTap,
-                upgradeCost: upgradeCost
-            })
-        });
-        if (!response.ok) throw new Error('Failed to save data');
-    } catch (error) {
-        console.error('Error saving data:', error);
-    }
-}
+        async function saveUserData() {
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-Telegram-Init-Data': initData || ''
+                    },
+                    body: JSON.stringify({
+                        points: points,
+                        pointsPerTap: pointsPerTap,
+                        upgradeCost: upgradeCost
+                    })
+                });
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Failed to save data: ${response.status} ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Error saving data:', error);
+                userIdDisplay.textContent = `${userId} (Save failed)`;
+            }
+        }
 
         async function tap() {
             points += pointsPerTap;
