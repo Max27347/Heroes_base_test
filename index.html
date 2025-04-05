@@ -22,11 +22,11 @@
         }
         
         #game-container {
-            background: #0f0f0f; /* Убрано скругление */
-            padding: 25px;
+            background: #0f0f0f;
+            padding: clamp(15px, 5vw, 25px); /* Адаптивный отступ */
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
             width: 100%;
-            max-width: 400px;
+            max-width: clamp(300px, 90vw, 400px); /* Адаптивная ширина */
             text-align: center;
             margin: 0 auto;
             height: 100%;
@@ -38,9 +38,9 @@
         }
 
         h1 {
-            font-size: 32px;
+            font-size: clamp(24px, 8vw, 32px); /* Адаптивный размер шрифта */
             color: #ffffff;
-            margin-bottom: 20px;
+            margin-bottom: clamp(10px, 3vw, 20px);
             text-transform: uppercase;
             letter-spacing: 3px;
             text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
@@ -48,22 +48,22 @@
         }
 
         p {
-            margin: 12px 0;
-            font-size: 16px;
+            margin: clamp(8px, 2vw, 12px) 0;
+            font-size: clamp(14px, 4vw, 16px);
             color: #cccccc;
         }
 
         #tap-button {
-            width: 160px;
-            height: 160px;
+            width: clamp(120px, 40vw, 160px);
+            height: clamp(120px, 40vw, 160px);
             border-radius: 50%;
             border: 3px solid #ffffff;
             background: radial-gradient(circle, #333333, #000000);
             color: #ffffff;
-            font-size: 26px;
+            font-size: clamp(20px, 6vw, 26px);
             font-weight: bold;
             cursor: pointer;
-            margin: 25px auto;
+            margin: clamp(15px, 5vw, 25px) auto;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
@@ -79,14 +79,14 @@
         }
 
         #upgrade-button {
-            padding: 12px 25px;
+            padding: clamp(8px, 3vw, 12px) clamp(15px, 5vw, 25px);
             background: #1a1a1a;
             color: #ffffff;
             border: 2px solid #ffffff;
             border-radius: 10px;
             cursor: pointer;
-            margin: 10px;
-            font-size: 16px;
+            margin: clamp(5px, 2vw, 10px);
+            font-size: clamp(14px, 4vw, 16px);
             transition: all 0.3s;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
@@ -106,23 +106,23 @@
         }
 
         #sync-status {
-            font-size: 12px;
+            font-size: clamp(10px, 3vw, 12px);
             color: #999999;
-            margin-top: 15px;
+            margin-top: clamp(10px, 3vw, 15px);
             text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
         }
 
         #info-button {
             position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 10px 20px;
+            top: clamp(10px, 2vw, 15px);
+            right: clamp(10px, 2vw, 15px);
+            padding: clamp(6px, 2vw, 10px) clamp(12px, 3vw, 20px);
             background: #ffffff;
             color: #000000;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
             transition: all 0.3s;
             box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
@@ -141,23 +141,24 @@
             width: 100%;
             height: 30%;
             background: rgba(15, 15, 15, 0.95);
-            padding: 20px;
+            padding: clamp(10px, 3vw, 20px);
             box-shadow: 0 -5px 15px rgba(255, 255, 255, 0.1);
             color: #ffffff;
             font-family: 'Courier New', monospace;
-            font-size: 14px;
+            font-size: clamp(12px, 3vw, 14px);
             overflow-y: auto;
             z-index: 1000;
             animation: slideUp 0.4s ease-out;
             border-top: 2px solid #ffffff;
-            border-radius: 20px 20px 0 0; /* Скругление только сверху */
+            border-radius: 20px 20px 0 0;
         }
 
         .info-row {
             display: flex;
             align-items: center;
-            margin-bottom: 10px;
-            flex-wrap: nowrap; /* Предотвращаем перенос */
+            margin-bottom: clamp(5px, 2vw, 10px);
+            flex-wrap: nowrap;
+            width: 100%;
         }
 
         .info-label {
@@ -172,26 +173,26 @@
 
         .info-value {
             background: #1a1a1a;
-            padding: 5px 10px;
+            padding: clamp(3px, 1vw, 5px) clamp(5px, 2vw, 10px);
             border-radius: 5px;
-            flex: 1; /* Растягивается до доступного пространства */
+            flex: 1;
             word-wrap: break-word;
             white-space: pre-wrap;
-            overflow-x: hidden; /* Убираем горизонтальную прокрутку */
+            overflow-x: hidden;
             text-overflow: ellipsis;
-            margin-right: 10px;
+            margin-right: clamp(5px, 1vw, 10px);
         }
 
         .copy-button {
             background: #333333;
             color: #ffffff;
             border: none;
-            padding: 5px 10px;
+            padding: clamp(3px, 1vw, 5px) clamp(5px, 2vw, 10px);
             border-radius: 5px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: clamp(10px, 2vw, 12px);
             transition: background 0.2s;
-            flex: 0 0 auto; /* Фиксированная ширина */
+            flex: 0 0 auto;
         }
 
         .copy-button:hover {
@@ -382,13 +383,22 @@
                     copyButton.className = 'copy-button';
                     copyButton.textContent = 'Copy';
                     copyButton.onclick = () => {
-                        navigator.clipboard.writeText(item.value).then(() => {
+                        // Используем Telegram WebApp API для копирования, если доступно
+                        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.writeToClipboard) {
+                            window.Telegram.WebApp.writeToClipboard(item.value);
                             copyButton.textContent = 'Copied!';
                             setTimeout(() => copyButton.textContent = 'Copy', 2000);
-                        }).catch(err => {
-                            console.error('Copy failed:', err);
-                            copyButton.textContent = 'Error';
-                        });
+                        } else {
+                            // Fallback на navigator.clipboard
+                            navigator.clipboard.writeText(item.value).then(() => {
+                                copyButton.textContent = 'Copied!';
+                                setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                            }).catch(err => {
+                                console.error('Copy failed:', err);
+                                copyButton.textContent = 'Error';
+                                setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                            });
+                        }
                     };
 
                     row.appendChild(label);
