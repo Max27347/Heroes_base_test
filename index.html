@@ -80,6 +80,8 @@
         let upgradeCost = 10;
         let userId = null;
         let initData = null;
+        let isSyncing = false;
+        let pendingSync = false;
 
         const pointsDisplay = document.getElementById('points');
         const pointsPerTapDisplay = document.getElementById('points-per-tap');
@@ -102,6 +104,7 @@
         }
         userIdDisplay.textContent = userId;
 
+        // Загрузка данных с сервера
         async function loadUserData() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
@@ -116,9 +119,15 @@
             }
         }
 
-        async function saveUserData() {
+        // Фоновая синхронизация с сервером
+        async function syncUserData() {
+            if (isSyncing) {
+                pendingSync = true; // Отмечаем, что есть изменения для синхронизации
+                return;
+            }
+
+            isSyncing = true;
             try {
-                console.log('Saving data for user:', userId, 'with initData:', initData);
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
                     method: 'POST',
                     headers: {
@@ -133,30 +142,22 @@
                 });
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Save failed: ${response.status} - ${errorText}`);
+                    console.error(`Sync failed: ${response.status} - ${errorText}`);
+                } else {
+                    console.log('Data synced successfully');
                 }
-                console.log('Data saved successfully');
             } catch (error) {
-                console.error('Error saving data:', error);
+                console.error('Error syncing data:', error);
+            } finally {
+                isSyncing = false;
+                if (pendingSync) {
+                    pendingSync = false;
+                    syncUserData(); // Синхронизируем снова, если были изменения
+                }
             }
         }
 
-        async function tap() {
-            points += pointsPerTap;
-            updateDisplay();
-            await saveUserData();
-        }
-
-        async function upgrade() {
-            if (points >= upgradeCost) {
-                points -= upgradeCost;
-                pointsPerTap += 1;
-                upgradeCost = Math.floor(upgradeCost * 1.5);
-                updateDisplay();
-                await saveUserData();
-            }
-        }
-
+        // Обновление интерфейса
         function updateDisplay() {
             pointsDisplay.textContent = points;
             pointsPerTapDisplay.textContent = pointsPerTap;
@@ -164,6 +165,27 @@
             upgradeButton.disabled = points < upgradeCost;
         }
 
+        // Обработка тапа
+        function tap() {
+            points += pointsPerTap;
+            updateDisplay();
+            // Запускаем синхронизацию в фоне
+            syncUserData();
+        }
+
+        // Обработка апгрейда
+        function upgrade() {
+            if (points >= upgradeCost) {
+                points -= upgradeCost;
+                pointsPerTap += 1;
+                upgradeCost = Math.floor(upgradeCost * 1.5);
+                updateDisplay();
+                // Запускаем синхронизацию в фоне
+                syncUserData();
+            }
+        }
+
+        // Инициализация
         loadUserData();
     </script>
 </body>
