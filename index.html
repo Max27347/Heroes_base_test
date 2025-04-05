@@ -93,21 +93,21 @@
             initData = window.Telegram.WebApp.initData;
             const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe || {};
             userId = initDataUnsafe.user?.id || 'Unknown';
+            console.log('initData:', initData); // Отладка
             window.Telegram.WebApp.expand();
             window.Telegram.WebApp.requestFullscreen();
         } else {
-            console.warn('Telegram Web App не доступен. Тестирование вне Telegram?');
-            userId = 'TestUser'; // Для тестирования вне Telegram
-            initData = ''; // Пустое значение для тестов
+            console.warn('Telegram Web App not available. Testing outside Telegram?');
+            userId = 'TestUser';
+            initData = '';
         }
         userIdDisplay.textContent = userId;
 
-        // Загрузка данных с сервера
         async function loadUserData() {
             try {
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
                 if (!response.ok) {
-                    throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
+                    throw new Error(`Failed to load: ${response.status} ${response.statusText}`);
                 }
                 const data = await response.json();
                 points = data.points || 0;
@@ -116,13 +116,12 @@
                 updateDisplay();
             } catch (error) {
                 console.error('Error loading data:', error);
-                userIdDisplay.textContent = `${userId} (Load failed)`;
             }
         }
 
-        // Сохранение данных на сервер
         async function saveUserData() {
             try {
+                console.log('Sending save request with initData:', initData); // Отладка
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
                     method: 'POST',
                     headers: { 
@@ -141,7 +140,6 @@
                 }
             } catch (error) {
                 console.error('Error saving data:', error);
-                userIdDisplay.textContent = `${userId} (Save failed)`;
             }
         }
 
@@ -168,7 +166,6 @@
             upgradeButton.disabled = points < upgradeCost;
         }
 
-        // Загружаем данные при старте
         loadUserData();
     </script>
 </body>
