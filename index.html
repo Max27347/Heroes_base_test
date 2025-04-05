@@ -76,7 +76,7 @@
 
     <script>
         const BACKEND_URL = 'https://heroesbase-production.up.railway.app'; // Укажите URL вашего backend
-
+        const initData = window.Telegram.WebApp.initData;
         let points = 0;
         let pointsPerTap = 1;
         let upgradeCost = 10;
@@ -115,22 +115,25 @@
         }
 
         // Сохранение данных на сервер
-        async function saveUserData() {
-            try {
-                const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        points: points,
-                        pointsPerTap: pointsPerTap,
-                        upgradeCost: upgradeCost
-                    })
-                });
-                if (!response.ok) throw new Error('Failed to save data');
-            } catch (error) {
-                console.error('Error saving data:', error);
-            }
-        }
+async function saveUserData() {
+    try {
+        const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-Telegram-Init-Data': initData
+            },
+            body: JSON.stringify({
+                points: points,
+                pointsPerTap: pointsPerTap,
+                upgradeCost: upgradeCost
+            })
+        });
+        if (!response.ok) throw new Error('Failed to save data');
+    } catch (error) {
+        console.error('Error saving data:', error);
+    }
+}
 
         async function tap() {
             points += pointsPerTap;
