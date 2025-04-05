@@ -7,19 +7,20 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            background-color: #1a1a1a; /* Черный фон */
+            color: #e0e0e0; /* Светло-серый текст */
             height: 100vh;
             overflow: hidden;
         }
         
         #game-container {
-            background-color: white;
+            background-color: #2b2b2b; /* Темно-серый фон контейнера */
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
             width: 100%;
             max-width: 400px;
             text-align: center;
@@ -28,42 +29,116 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 28px;
+            color: #ffffff; /* Белый заголовок */
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        p {
+            margin: 10px 0;
+            font-size: 16px;
+            color: #b0b0b0; /* Серый текст */
         }
 
         #tap-button {
             width: 150px;
             height: 150px;
             border-radius: 50%;
-            border: none;
-            background-color: #4CAF50;
-            color: white;
+            border: 2px solid #ffffff; /* Белая обводка */
+            background-color: #4CAF50; /* Зеленый акцент */
+            color: #ffffff;
             font-size: 24px;
+            font-weight: bold;
             cursor: pointer;
             margin: 20px auto;
-            transition: transform 0.1s;
+            transition: transform 0.2s, background-color 0.2s;
         }
 
-        #tap-button:hover { transform: scale(1.05); }
-        #tap-button:active { transform: scale(0.95); }
+        #tap-button:hover {
+            transform: scale(1.05);
+            background-color: #45a049; /* Темнее при наведении */
+        }
+
+        #tap-button:active {
+            transform: scale(0.95);
+        }
 
         #upgrade-button {
-            padding: 10px 20px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 5px;
+            padding: 12px 24px;
+            background-color: #333333; /* Темно-серый фон кнопки */
+            color: #ffffff;
+            border: 1px solid #ffffff; /* Белая обводка */
+            border-radius: 8px;
             cursor: pointer;
-            margin: 5px;
+            margin: 10px;
+            font-size: 16px;
+            transition: background-color 0.2s;
+        }
+
+        #upgrade-button:hover {
+            background-color: #444444; /* Светлее при наведении */
         }
 
         #upgrade-button:disabled {
-            background-color: #cccccc;
+            background-color: #555555; /* Серый для отключенной кнопки */
+            color: #888888;
+            border-color: #888888;
             cursor: not-allowed;
         }
 
         #sync-status {
             font-size: 12px;
-            color: #666;
+            color: #888888; /* Темно-серый статус */
+            margin-top: 10px;
+        }
+
+        #info-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 16px;
+            background-color: #ffffff; /* Белая кнопка */
+            color: #1a1a1a; /* Черный текст */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        #info-button:hover {
+            background-color: #e0e0e0; /* Светло-серый при наведении */
+        }
+
+        #info-console {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #2b2b2b;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        #info-console pre {
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
         }
     </style>
 </head>
@@ -77,6 +152,10 @@
         <button id="tap-button" onclick="tap()">TAP</button>
         <button id="upgrade-button" onclick="upgrade()">Upgrade</button>
         <p id="sync-status">Synced</p>
+        <button id="info-button" onclick="toggleInfo()">Info</button>
+    </div>
+    <div id="info-console">
+        <pre id="info-content"></pre>
     </div>
 
     <script>
@@ -88,6 +167,7 @@
         let initData = null;
         let isSyncing = false;
         let pendingSync = false;
+        let initDataUnsafe = {};
 
         const pointsDisplay = document.getElementById('points');
         const pointsPerTapDisplay = document.getElementById('points-per-tap');
@@ -95,12 +175,14 @@
         const upgradeButton = document.getElementById('upgrade-button');
         const userIdDisplay = document.getElementById('user-id');
         const syncStatus = document.getElementById('sync-status');
+        const infoConsole = document.getElementById('info-console');
+        const infoContent = document.getElementById('info-content');
 
         // Инициализация Telegram Web App
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             initData = window.Telegram.WebApp.initData;
-            const initDataUnsafe = window.Telegram.WebApp.initDataUnsafe || {};
+            initDataUnsafe = window.Telegram.WebApp.initDataUnsafe || {};
             userId = initDataUnsafe.user?.id || 'Unknown';
             console.log('initData:', initData);
             window.Telegram.WebApp.expand();
@@ -192,6 +274,31 @@
                 upgradeCost = Math.floor(upgradeCost * 1.5);
                 updateDisplay();
                 syncUserData();
+            }
+        }
+
+        // Показ/скрытие консоли с информацией
+        function toggleInfo() {
+            if (infoConsole.style.display === 'block') {
+                infoConsole.style.display = 'none';
+            } else {
+                const userData = initDataUnsafe.user || {};
+                const info = {
+                    'User ID': userId,
+                    'First Name': userData.first_name || 'N/A',
+                    'Last Name': userData.last_name || 'N/A',
+                    'Username': userData.username || 'N/A',
+                    'Language Code': userData.language_code || 'N/A',
+                    'Is Premium': userData.is_premium ? 'Yes' : 'No',
+                    'Allows Write to PM': userData.allows_write_to_pm ? 'Yes' : 'No',
+                    'Photo URL': userData.photo_url || 'N/A',
+                    'Init Data': initData || 'N/A',
+                    'Points': points,
+                    'Points per Tap': pointsPerTap,
+                    'Upgrade Cost': upgradeCost
+                };
+                infoContent.textContent = JSON.stringify(info, null, 2);
+                infoConsole.style.display = 'block';
             }
         }
 
