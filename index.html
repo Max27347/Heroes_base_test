@@ -3,185 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lucky Cubes - Get Coins</title>
+    <title>Tap to Earn - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Оставляем стили без изменений */
         body {
             font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
             margin: 0;
+            padding: 0;
             background-color: #f0f0f0;
+            height: 100vh;
+            overflow: hidden;
         }
-        .container {
-            text-align: center;
+        
+        #game-container {
             background-color: white;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        button {
-            padding: 10px 20px;
-            font-size: 16px;
+
+        #tap-button {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: none;
             background-color: #4CAF50;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            margin: 20px auto;
+            transition: transform 0.1s;
+        }
+
+        #tap-button:hover { transform: scale(1.05); }
+        #tap-button:active { transform: scale(0.95); }
+
+        #upgrade-button {
+            padding: 10px 20px;
+            background-color: #2196F3;
             color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            margin: 5px;
         }
-        button:hover {
-            background-color: #45a049;
-        }
-        #coins {
-            font-size: 24px;
-            margin-top: 20px;
+
+        #upgrade-button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Lucky Cubes</h1>
-        <p>Click the button to get a coin!</p>
-        <button onclick="getCoin()">Get Coin</button>
-        <div id="coins">Coins: 0</div>
+    <div id="game-container">
+        <h1>Tap to Earn</h1>
+        <p>User ID: <span id="user-id">Loading...</span></p>
+        <p>Points: <span id="points">0</span></p>
+        <p>Points per Tap: <span id="points-per-tap">1</span></p>
+        <p>Upgrade Cost: <span id="upgrade-cost">10</span></p>
+        <button id="tap-button" onclick="tap()">TAP</button>
+        <button id="upgrade-button" onclick="upgrade()">Upgrade</button>
     </div>
 
     <script>
-        const tg = window.Telegram?.WebApp;
-        const AppConfig = {
-            API_BASE_URL: "https://heroesbase-production.up.railway.app"
-        };
+        const BACKEND_URL = 'https://heroesbase-production.up.railway.app'; // Укажите URL вашего backend
 
-        const AppState = {
-            userData: null,
-            userId: null,
-            token: null,
-            isInitialized: false,
-            coins: 0
-        };
+        let points = 0;
+        let pointsPerTap = 1;
+        let upgradeCost = 10;
+        let userId = null;
 
-        // Проверка доступности Telegram WebApp
-        if (!tg) {
-            console.error("Telegram WebApp is not available");
-            alert("This app must be opened in Telegram");
-        } else {
-            // Инициализация Telegram WebApp
-            tg.ready();
-            tg.expand();
-            console.log("Telegram WebApp initialized");
-        }
+        const pointsDisplay = document.getElementById('points');
+        const pointsPerTapDisplay = document.getElementById('points-per-tap');
+        const upgradeCostDisplay = document.getElementById('upgrade-cost');
+        const upgradeButton = document.getElementById('upgrade-button');
+        const userIdDisplay = document.getElementById('user-id');
 
-        // API функции
-        const API = {
-            async fetch(endpoint, options = {}) {
-                const url = `${AppConfig.API_BASE_URL}${endpoint}`;
-                const telegramInitData = tg?.initData || "";
+        // Telegram Web App
+        window.Telegram.WebApp.ready();
+        const initData = window.Telegram.WebApp.initDataUnsafe;
+        userId = initData?.user?.id || 'Unknown';
+        userIdDisplay.textContent = userId;
 
-                if (!telegramInitData) {
-                    throw new Error("Telegram initData is required");
-                }
+        window.Telegram.WebApp.expand();
+        window.Telegram.WebApp.requestFullscreen();
 
-                console.log("Sending request to:", url);
-                console.log("X-Telegram-Init-Data:", telegramInitData);
-
-                const headers = {
-                    "Content-Type": "application/json",
-                    "X-Telegram-Init-Data": telegramInitData,
-                    ...(AppState.token && { "Authorization": `Bearer ${AppState.token}` }),
-                    ...options.headers
-                };
-
-                try {
-                    const response = await fetch(url, {
-                        ...options,
-                        headers,
-                        credentials: 'include'
-                    });
-
-                    console.log("Response status:", response.status);
-                    console.log("Response headers:", [...response.headers.entries()]);
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-                    }
-
-                    return await response.json();
-                } catch (error) {
-                    console.error("Fetch error:", error);
-                    throw error;
-                }
-            }
-        };
-
-        // Инициализация пользователя
-        async function initUser() {
+        // Загрузка данных с сервера
+        async function loadUserData() {
             try {
-                const user = tg?.initDataUnsafe?.user;
-                if (!user || !user.id) {
-                    throw new Error("User ID not found in Telegram initData");
+                const response = await fetch(`${BACKEND_URL}/api/user/${userId}`);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const data = await response.json();
+                if (data) {
+                    points = data.points || 0;
+                    pointsPerTap = data.pointsPerTap || 1;
+                    upgradeCost = data.upgradeCost || 10;
                 }
-
-                AppState.userId = user.id.toString();
-                console.log("User ID:", AppState.userId);
-
-                const response = await API.fetch('/init', {
-                    method: 'POST'
-                });
-
-                console.log("Init response:", response);
-                AppState.token = response.t;
-                AppState.coins = response.coins || 0;
-                AppState.isInitialized = true;
-                updateCoins();
+                updateDisplay();
             } catch (error) {
-                console.error('Error initializing user:', error);
-                alert(`Failed to initialize: ${error.message}`);
+                console.error('Error loading data:', error);
             }
         }
 
-        // Получение монеты
-        async function getCoin() {
-            if (!AppState.isInitialized) {
-                alert('Please wait, initializing user...');
-                return;
-            }
-
+        // Сохранение данных на сервер
+        async function saveUserData() {
             try {
-                const response = await API.fetch('/get_coin', {
+                const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
                     method: 'POST',
-                    body: JSON.stringify({ user_id: AppState.userId })
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        points: points,
+                        pointsPerTap: pointsPerTap,
+                        upgradeCost: upgradeCost
+                    })
                 });
-
-                console.log("Get coin response:", response);
-                if (response.success) {
-                    AppState.coins = response.coins;
-                    updateCoins();
-                } else {
-                    alert(response.message || 'Error getting coin');
-                }
+                if (!response.ok) throw new Error('Failed to save data');
             } catch (error) {
-                console.error('Error getting coin:', error);
-                if (error.message.includes("401")) {
-                    alert('Authentication failed. Reloading...');
-                    await initUser();
-                } else {
-                    alert(`Failed to get coin: ${error.message}`);
-                }
+                console.error('Error saving data:', error);
             }
         }
 
-        // Обновление отображения монет
-        function updateCoins() {
-            document.getElementById('coins').innerText = `Coins: ${AppState.coins}`;
+        async function tap() {
+            points += pointsPerTap;
+            updateDisplay();
+            await saveUserData();
         }
 
-        // Инициализация при загрузке
-        window.onload = async () => {
-            await initUser();
-        };
+        async function upgrade() {
+            if (points >= upgradeCost) {
+                points -= upgradeCost;
+                pointsPerTap += 1;
+                upgradeCost = Math.floor(upgradeCost * 1.5);
+                updateDisplay();
+                await saveUserData();
+            }
+        }
+
+        function updateDisplay() {
+            pointsDisplay.textContent = points;
+            pointsPerTapDisplay.textContent = pointsPerTap;
+            upgradeCostDisplay.textContent = upgradeCost;
+            upgradeButton.disabled = points < upgradeCost;
+        }
+
+        // Загружаем данные при старте
+        loadUserData();
     </script>
 </body>
 </html>
