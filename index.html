@@ -2,25 +2,30 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Запрет масштабирования -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Tap to Earn - Telegram Mini App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: 'Roboto', Arial, sans-serif;
+            font-family: 'Orbitron', Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #1a1a1a; /* Черный фон */
-            color: #e0e0e0; /* Светло-серый текст */
+            background: linear-gradient(135deg, #000000, #1a1a1a);
+            color: #ffffff;
             height: 100vh;
             overflow: hidden;
+            position: fixed;
+            width: 100%;
+            -webkit-user-select: none;
+            user-select: none;
         }
         
         #game-container {
-            background-color: #2b2b2b; /* Темно-серый фон контейнера */
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            background: #0f0f0f;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
             width: 100%;
             max-width: 400px;
             text-align: center;
@@ -30,115 +35,171 @@
             flex-direction: column;
             justify-content: center;
             position: relative;
+            overflow: hidden;
         }
 
         h1 {
-            font-size: 28px;
-            color: #ffffff; /* Белый заголовок */
+            font-size: 32px;
+            color: #ffffff;
             margin-bottom: 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            animation: glow 2s infinite alternate;
         }
 
         p {
-            margin: 10px 0;
+            margin: 12px 0;
             font-size: 16px;
-            color: #b0b0b0; /* Серый текст */
+            color: #cccccc;
         }
 
         #tap-button {
-            width: 150px;
-            height: 150px;
+            width: 160px;
+            height: 160px;
             border-radius: 50%;
-            border: 2px solid #ffffff; /* Белая обводка */
-            background-color: #4CAF50; /* Зеленый акцент */
+            border: 3px solid #ffffff;
+            background: radial-gradient(circle, #333333, #000000);
             color: #ffffff;
-            font-size: 24px;
+            font-size: 26px;
             font-weight: bold;
             cursor: pointer;
-            margin: 20px auto;
-            transition: transform 0.2s, background-color 0.2s;
+            margin: 25px auto;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
         }
 
         #tap-button:hover {
-            transform: scale(1.05);
-            background-color: #45a049; /* Темнее при наведении */
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
         }
 
         #tap-button:active {
             transform: scale(0.95);
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
         #upgrade-button {
-            padding: 12px 24px;
-            background-color: #333333; /* Темно-серый фон кнопки */
+            padding: 12px 25px;
+            background: #1a1a1a;
             color: #ffffff;
-            border: 1px solid #ffffff; /* Белая обводка */
-            border-radius: 8px;
+            border: 2px solid #ffffff;
+            border-radius: 10px;
             cursor: pointer;
             margin: 10px;
             font-size: 16px;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
         }
 
         #upgrade-button:hover {
-            background-color: #444444; /* Светлее при наведении */
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
 
         #upgrade-button:disabled {
-            background-color: #555555; /* Серый для отключенной кнопки */
-            color: #888888;
-            border-color: #888888;
+            background: #333333;
+            color: #666666;
+            border-color: #666666;
             cursor: not-allowed;
+            box-shadow: none;
         }
 
         #sync-status {
             font-size: 12px;
-            color: #888888; /* Темно-серый статус */
-            margin-top: 10px;
+            color: #999999;
+            margin-top: 15px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
         }
 
         #info-button {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 8px 16px;
-            background-color: #ffffff; /* Белая кнопка */
-            color: #1a1a1a; /* Черный текст */
+            top: 15px;
+            right: 15px;
+            padding: 10px 20px;
+            background: #ffffff;
+            color: #000000;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 14px;
-            transition: background-color 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
         }
 
         #info-button:hover {
-            background-color: #e0e0e0; /* Светло-серый при наведении */
+            background: #000000;
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
         }
 
-        #info-console {
+        #info-menu {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #2b2b2b;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            background: rgba(15, 15, 15, 0.95);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-            color: #e0e0e0;
+            box-shadow: 0 -5px 15px rgba(255, 255, 255, 0.1);
+            color: #ffffff;
             font-family: 'Courier New', monospace;
             font-size: 14px;
-            max-width: 90%;
-            max-height: 80vh;
             overflow-y: auto;
             z-index: 1000;
+            animation: slideUp 0.4s ease-out;
+            border-top: 2px solid #ffffff;
         }
 
-        #info-console pre {
-            margin: 0;
-            white-space: pre-wrap;
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            color: #cccccc;
+            font-weight: bold;
+            flex: 0 0 30%;
+            text-align: left;
+        }
+
+        .info-value {
+            background: #1a1a1a;
+            padding: 5px 10px;
+            border-radius: 5px;
+            flex: 0 0 60%;
             word-wrap: break-word;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .copy-button {
+            background: #333333;
+            color: #ffffff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .copy-button:hover {
+            background: #555555;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px rgba(255, 255, 255, 0.5); }
+            to { text-shadow: 0 0 20px rgba(255, 255, 255, 0.8); }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
         }
     </style>
 </head>
@@ -154,8 +215,8 @@
         <p id="sync-status">Synced</p>
         <button id="info-button" onclick="toggleInfo()">Info</button>
     </div>
-    <div id="info-console">
-        <pre id="info-content"></pre>
+    <div id="info-menu">
+        <div id="info-content"></div>
     </div>
 
     <script>
@@ -175,7 +236,7 @@
         const upgradeButton = document.getElementById('upgrade-button');
         const userIdDisplay = document.getElementById('user-id');
         const syncStatus = document.getElementById('sync-status');
-        const infoConsole = document.getElementById('info-console');
+        const infoMenu = document.getElementById('info-menu');
         const infoContent = document.getElementById('info-content');
 
         // Инициализация Telegram Web App
@@ -277,28 +338,56 @@
             }
         }
 
-        // Показ/скрытие консоли с информацией
+        // Показ/скрытие меню с инфой
         function toggleInfo() {
-            if (infoConsole.style.display === 'block') {
-                infoConsole.style.display = 'none';
+            if (infoMenu.style.display === 'block') {
+                infoMenu.style.display = 'none';
             } else {
                 const userData = initDataUnsafe.user || {};
-                const info = {
-                    'User ID': userId,
-                    'First Name': userData.first_name || 'N/A',
-                    'Last Name': userData.last_name || 'N/A',
-                    'Username': userData.username || 'N/A',
-                    'Language Code': userData.language_code || 'N/A',
-                    'Is Premium': userData.is_premium ? 'Yes' : 'No',
-                    'Allows Write to PM': userData.allows_write_to_pm ? 'Yes' : 'No',
-                    'Photo URL': userData.photo_url || 'N/A',
-                    'Init Data': initData || 'N/A',
-                    'Points': points,
-                    'Points per Tap': pointsPerTap,
-                    'Upgrade Cost': upgradeCost
-                };
-                infoContent.textContent = JSON.stringify(info, null, 2);
-                infoConsole.style.display = 'block';
+                const info = [
+                    { label: 'User ID', value: userId },
+                    { label: 'First Name', value: userData.first_name || 'N/A' },
+                    { label: 'Last Name', value: userData.last_name || 'N/A' },
+                    { label: 'Username', value: userData.username || 'N/A' },
+                    { label: 'Language Code', value: userData.language_code || 'N/A' },
+                    { label: 'Is Premium', value: userData.is_premium ? 'Yes' : 'No' },
+                    { label: 'Allows Write to PM', value: userData.allows_write_to_pm ? 'Yes' : 'No' },
+                    { label: 'Photo URL', value: userData.photo_url || 'N/A' },
+                    { label: 'Init Data', value: initData || 'N/A' },
+                    { label: 'Points', value: points },
+                    { label: 'Points per Tap', value: pointsPerTap },
+                    { label: 'Upgrade Cost', value: upgradeCost }
+                ];
+
+                infoContent.innerHTML = '';
+                info.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'info-row';
+
+                    const label = document.createElement('span');
+                    label.className = 'info-label';
+                    label.textContent = item.label;
+
+                    const value = document.createElement('span');
+                    value.className = 'info-value';
+                    value.textContent = item.value;
+
+                    const copyButton = document.createElement('button');
+                    copyButton.className = 'copy-button';
+                    copyButton.textContent = 'Copy';
+                    copyButton.onclick = () => {
+                        navigator.clipboard.writeText(item.value);
+                        copyButton.textContent = 'Copied!';
+                        setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                    };
+
+                    row.appendChild(label);
+                    row.appendChild(value);
+                    row.appendChild(copyButton);
+                    infoContent.appendChild(row);
+                });
+
+                infoMenu.style.display = 'block';
             }
         }
 
