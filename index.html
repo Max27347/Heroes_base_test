@@ -60,6 +60,11 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
+
+        #sync-status {
+            font-size: 12px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -71,6 +76,7 @@
         <p>Upgrade Cost: <span id="upgrade-cost">10</span></p>
         <button id="tap-button" onclick="tap()">TAP</button>
         <button id="upgrade-button" onclick="upgrade()">Upgrade</button>
+        <p id="sync-status">Synced</p>
     </div>
 
     <script>
@@ -88,6 +94,7 @@
         const upgradeCostDisplay = document.getElementById('upgrade-cost');
         const upgradeButton = document.getElementById('upgrade-button');
         const userIdDisplay = document.getElementById('user-id');
+        const syncStatus = document.getElementById('sync-status');
 
         // Инициализация Telegram Web App
         if (window.Telegram && window.Telegram.WebApp) {
@@ -122,11 +129,13 @@
         // Фоновая синхронизация с сервером
         async function syncUserData() {
             if (isSyncing) {
-                pendingSync = true; // Отмечаем, что есть изменения для синхронизации
+                pendingSync = true;
+                syncStatus.textContent = 'Pending sync...';
                 return;
             }
 
             isSyncing = true;
+            syncStatus.textContent = 'Syncing...';
             try {
                 const response = await fetch(`${BACKEND_URL}/api/user/${userId}`, {
                     method: 'POST',
@@ -143,16 +152,19 @@
                 if (!response.ok) {
                     const errorText = await response.text();
                     console.error(`Sync failed: ${response.status} - ${errorText}`);
+                    syncStatus.textContent = 'Sync failed';
                 } else {
                     console.log('Data synced successfully');
+                    syncStatus.textContent = 'Synced';
                 }
             } catch (error) {
                 console.error('Error syncing data:', error);
+                syncStatus.textContent = 'Sync error';
             } finally {
                 isSyncing = false;
                 if (pendingSync) {
                     pendingSync = false;
-                    syncUserData(); // Синхронизируем снова, если были изменения
+                    syncUserData();
                 }
             }
         }
@@ -169,7 +181,6 @@
         function tap() {
             points += pointsPerTap;
             updateDisplay();
-            // Запускаем синхронизацию в фоне
             syncUserData();
         }
 
@@ -180,7 +191,6 @@
                 pointsPerTap += 1;
                 upgradeCost = Math.floor(upgradeCost * 1.5);
                 updateDisplay();
-                // Запускаем синхронизацию в фоне
                 syncUserData();
             }
         }
