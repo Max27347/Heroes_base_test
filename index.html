@@ -22,9 +22,8 @@
         }
         
         #game-container {
-            background: #0f0f0f;
+            background: #0f0f0f; /* Убрано скругление */
             padding: 25px;
-            border-radius: 20px;
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.1), inset 0 0 10px rgba(255, 255, 255, 0.05);
             width: 100%;
             max-width: 400px;
@@ -151,13 +150,14 @@
             z-index: 1000;
             animation: slideUp 0.4s ease-out;
             border-top: 2px solid #ffffff;
+            border-radius: 20px 20px 0 0; /* Скругление только сверху */
         }
 
         .info-row {
             display: flex;
-            justify-content: space-between;
             align-items: center;
             margin-bottom: 10px;
+            flex-wrap: nowrap; /* Предотвращаем перенос */
         }
 
         .info-label {
@@ -165,16 +165,21 @@
             font-weight: bold;
             flex: 0 0 30%;
             text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .info-value {
             background: #1a1a1a;
             padding: 5px 10px;
             border-radius: 5px;
-            flex: 0 0 60%;
+            flex: 1; /* Растягивается до доступного пространства */
             word-wrap: break-word;
             white-space: pre-wrap;
-            overflow-x: auto;
+            overflow-x: hidden; /* Убираем горизонтальную прокрутку */
+            text-overflow: ellipsis;
+            margin-right: 10px;
         }
 
         .copy-button {
@@ -186,6 +191,7 @@
             cursor: pointer;
             font-size: 12px;
             transition: background 0.2s;
+            flex: 0 0 auto; /* Фиксированная ширина */
         }
 
         .copy-button:hover {
@@ -376,9 +382,13 @@
                     copyButton.className = 'copy-button';
                     copyButton.textContent = 'Copy';
                     copyButton.onclick = () => {
-                        navigator.clipboard.writeText(item.value);
-                        copyButton.textContent = 'Copied!';
-                        setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                        navigator.clipboard.writeText(item.value).then(() => {
+                            copyButton.textContent = 'Copied!';
+                            setTimeout(() => copyButton.textContent = 'Copy', 2000);
+                        }).catch(err => {
+                            console.error('Copy failed:', err);
+                            copyButton.textContent = 'Error';
+                        });
                     };
 
                     row.appendChild(label);
